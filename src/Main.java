@@ -1,6 +1,8 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.Scanner;
 
 public class Main {
@@ -8,7 +10,6 @@ public class Main {
         Scanner scan = new Scanner(System.in);
         System.out.print("Are you hosting? (true/false): ");
         boolean hoster = scan.nextBoolean();
-        // Consume the leftover newline
         scan.nextLine();
 
         String ip = "";
@@ -21,22 +22,40 @@ public class Main {
             port = scan.nextLine();
         }
 
+        Process process = null;
         try {
-            Process process;
             if (hoster) {
-                process = Runtime.getRuntime().exec(new String[]{"nc", "-nvlp", "4444"}); // Hosting command
+                process = Runtime.getRuntime().exec(new String[]{"nc", "-nvlp", "4444"});
             } else {
-                process = Runtime.getRuntime().exec(new String[]{"nc", ip, port}); // Connecting command
+                process = Runtime.getRuntime().exec(new String[]{"nc", ip, port});
             }
 
-            new Thread(() -> readStream(process.getInputStream())).start();
-            new Thread(() -> readStream(process.getErrorStream())).start();
+            Process finalProcess = process;
+            new Thread(() -> readStream(finalProcess.getInputStream())).start();
+            Process finalProcess1 = process;
+            new Thread(() -> readStream(finalProcess1.getErrorStream())).start();
+
+            try (OutputStream os = process.getOutputStream(); PrintWriter pw = new PrintWriter(os)) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                String line;
+                while ((line = br.readLine()) != null) {
+                    pw.println(line);
+                    pw.flush();
+                    if ("exit".equals(line)) {
+                        break;
+                    }
+                }
+            }
 
             int exitCode = process.waitFor();
             System.out.println("Process exited with code " + exitCode);
 
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
+        } finally {
+            if (process != null) {
+                process.destroy();
+            }
         }
     }
 
