@@ -29,11 +29,9 @@ public class Main {
                 process = Runtime.getRuntime().exec(new String[]{"nc", ip, port}); // Connecting command
             }
 
-            // Handle output and error streams in separate threads
             new Thread(() -> readStream(process.getInputStream())).start();
             new Thread(() -> readStream(process.getErrorStream())).start();
 
-            // Wait for the process to complete
             int exitCode = process.waitFor();
             System.out.println("Process exited with code " + exitCode);
 
