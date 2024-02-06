@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Main {
@@ -24,11 +25,25 @@ public class Main {
 
         Process process = null;
         try {
+            String osName = System.getProperty("os.name").toLowerCase();
+            String[] cmd;
             if (hoster) {
-                process = Runtime.getRuntime().exec(new String[]{"nc", "-nvlp", "4444"});
+                cmd = new String[]{"nc", "-nvlp", "4444"};
             } else {
-                process = Runtime.getRuntime().exec(new String[]{"nc", ip, port});
+                cmd = new String[]{"nc", ip, port};
             }
+
+            ProcessBuilder pb = new ProcessBuilder(cmd);
+
+            if (osName.contains("win")) {
+                Map<String, String> env = pb.environment();
+                String path = env.get("Path");
+                // Get the directory of the running JAR file
+                String jarPath = new java.io.File(Main.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent();
+                env.put("Path", path + ";" + jarPath);
+            }
+
+            process = pb.start();
 
             Process finalProcess = process;
             new Thread(() -> readStream(finalProcess.getInputStream())).start();
