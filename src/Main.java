@@ -22,13 +22,16 @@ public class Main {
             System.out.print("Type Port: ");
             port = scan.nextLine();
         }
+        if(hoster){
+            System.out.print("Type Port: ");
+        }
 
         Process process = null;
         try {
             String osName = System.getProperty("os.name").toLowerCase();
             String[] cmd;
             if (hoster) {
-                cmd = new String[]{"nc", "-nvlp", "4444"};
+                cmd = new String[]{"nc", "-nvlp", port};
             } else {
                 cmd = new String[]{"nc", ip, port};
             }
